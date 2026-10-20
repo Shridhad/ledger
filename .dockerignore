@@ -1,0 +1,11 @@
+.git
+.cursor
+.next
+.node_modules
+node_modules
+.env*
+.neon
+.vercel
+AGENTS.md
+README.md
+*.md

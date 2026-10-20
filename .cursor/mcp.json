@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "ledger": {
+      "url": "https://br-steep-sun-b5lukx3v-mcp.compute.c-7.us-east-2.aws.neon.tech/mcp"
+    }
+  }
+}

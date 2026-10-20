@@ -1,0 +1,6 @@
+.env*
+.neon
+.cursor
+.next
+node_modules
+AGENTS.md

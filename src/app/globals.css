@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #efe6d4;
+  --paper-2: #f7f1e4;
+  --ink: #1b1712;
+  --muted: #6d6458;
+  --rule: #d6ccb8;
+  --stamp: #b4452a;
+  --moss: #33563d;
+  --ochre: #b5812a;
+  --slate: #3d4a5c;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-rule: var(--rule);
+  --color-stamp: var(--stamp);
+  --color-moss: var(--moss);
+  --color-ochre: var(--ochre);
+  --color-slate: var(--slate);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #fbf6ea 0%, transparent 55%),
+    linear-gradient(180deg, var(--paper-2), var(--paper));
+  color: var(--ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: #ead7a8;
+}
+
+.ledger-grid {
+  background-image: linear-gradient(var(--rule) 1px, transparent 1px);
+  background-size: 100% 2.15rem;
+  background-position: 0 2.6rem;
+}
