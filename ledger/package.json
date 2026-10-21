@@ -1,0 +1,42 @@
+{
+  "name": "ledger",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "mcp:deploy": "neon functions deploy mcp --src ../mcp/index.ts --project-id raspy-sky-68137690 --branch br-steep-sun-b5lukx3v"
+  },
+  "dependencies": {
+    "@hono/mcp": "^0.3.2",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@neon/config": "^1.9.2",
+    "@neon/oauth": "^0.1.0",
+    "@neondatabase/auth": "^0.7.0-beta",
+    "@neondatabase/serverless": "^1.2.0",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.13",
+    "hono-rate-limiter": "^0.5.4",
+    "jose": "^6.2.12",
+    "next": "16.5.0-canary.9",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^18.0.7",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^10",
+    "eslint-config-next": "16.5.0-canary.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

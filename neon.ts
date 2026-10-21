@@ -4,7 +4,7 @@ export default defineConfig({
   functions: {
     mcp: {
       name: "ledger mcp",
-      source: "functions/mcp/index.ts",
+      source: "mcp/index.ts",
     },
   },
 });

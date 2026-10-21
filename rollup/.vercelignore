@@ -1,0 +1,7 @@
+.env*
+.cursor
+.next
+node_modules
+AGENTS.md
+.npmrc
+package-lock.json
