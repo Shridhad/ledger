@@ -39,6 +39,11 @@ export function signInWithGoogle() {
   });
 }
 
+async function hasSession() {
+  const { data } = await authClient.getSession();
+  return Boolean(data?.user);
+}
+
 async function resumeOAuth() {
   const { error } = await authClient.oauth2.continue({ selected: true });
   if (error) return error.message || "Could not continue authorization.";
@@ -62,30 +67,28 @@ async function signInWithEmail(
   return null;
 }
 
-export function SignInForm({ signedIn }: { signedIn: boolean }) {
+export function SignInForm() {
   const [busy, setBusy] = useState(false);
+  const [resuming, setResuming] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
   const [resumeError, setResumeError] = useState<string | null>(null);
   const [state, formAction, isPending] = useActionState(signInWithEmail, null);
   const oauthSearch = useMemo(() => oauthLoginSearch(), []);
   const promptLogin = useMemo(() => hasPromptLogin(), []);
-  const shouldResume = Boolean(oauthSearch && signedIn && !promptLogin);
 
   useEffect(() => {
-    if (!shouldResume) return;
+    if (!oauthSearch || promptLogin) return;
     let cancelled = false;
-    setBusy(true);
-    resumeOAuth().then((message) => {
-      if (cancelled) return;
-      if (message) {
-        setResumeError(message);
-        setBusy(false);
-      }
-    });
+    (async () => {
+      if (!(await hasSession()) || cancelled) return;
+      setResuming(true);
+      const message = await resumeOAuth();
+      if (message && !cancelled) setResumeError(message);
+    })();
     return () => {
       cancelled = true;
     };
-  }, [shouldResume]);
+  }, [oauthSearch, promptLogin]);
 
   async function continueWithGoogle() {
     setBusy(true);
@@ -97,7 +100,7 @@ export function SignInForm({ signedIn }: { signedIn: boolean }) {
     }
   }
 
-  if (shouldResume) {
+  if (resuming) {
     return (
       <AuthShell
         title="Continuing…"
