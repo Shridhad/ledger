@@ -36,7 +36,7 @@ export default function SignUpPage() {
 
   async function continueWithGoogle() {
     setBusy(true);
-    const { error } = await signInWithGoogle(oauthSearch);
+    const { error } = await signInWithGoogle();
     if (error) setBusy(false);
   }
 

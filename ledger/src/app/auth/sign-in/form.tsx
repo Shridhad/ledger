@@ -12,9 +12,13 @@ export function oauthLoginSearch() {
   return window.location.search;
 }
 
-/** Where to land after authenticating: consent during an OAuth redirect, otherwise the app. */
 function postAuthPath(oauthSearch: string) {
   return oauthSearch ? `/auth/consent${oauthSearch}` : "/";
+}
+
+function hasPromptLogin() {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("prompt") === "login";
 }
 
 export function redirectAfterAuth(data: unknown) {
@@ -22,12 +26,23 @@ export function redirectAfterAuth(data: unknown) {
   window.location.assign(url ?? postAuthPath(oauthLoginSearch()));
 }
 
-/** Social login leaves the page, so the callback must carry the signed query to consent. */
-export function signInWithGoogle(oauthSearch: string) {
+export function signInWithGoogle() {
+  const search = oauthLoginSearch();
   return authClient.signIn.social({
     provider: "google",
-    callbackURL: postAuthPath(oauthSearch),
+    callbackURL:
+      typeof window === "undefined"
+        ? "/"
+        : search
+          ? `${window.location.origin}/auth/sign-in${search}`
+          : window.location.origin + "/",
   });
+}
+
+async function resumeOAuth() {
+  const { error } = await authClient.oauth2.continue({ selected: true });
+  if (error) return error.message || "Could not continue authorization.";
+  return null;
 }
 
 async function signInWithEmail(
@@ -49,21 +64,40 @@ async function signInWithEmail(
 
 export function SignInForm({ signedIn }: { signedIn: boolean }) {
   const [busy, setBusy] = useState(false);
+  const [socialError, setSocialError] = useState<string | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const [state, formAction, isPending] = useActionState(signInWithEmail, null);
   const oauthSearch = useMemo(() => oauthLoginSearch(), []);
+  const promptLogin = useMemo(() => hasPromptLogin(), []);
+  const shouldResume = Boolean(oauthSearch && signedIn && !promptLogin);
 
   useEffect(() => {
-    if (!signedIn || !oauthSearch) return;
-    window.location.replace(postAuthPath(oauthSearch));
-  }, [signedIn, oauthSearch]);
+    if (!shouldResume) return;
+    let cancelled = false;
+    setBusy(true);
+    resumeOAuth().then((message) => {
+      if (cancelled) return;
+      if (message) {
+        setResumeError(message);
+        setBusy(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldResume]);
 
   async function continueWithGoogle() {
     setBusy(true);
-    const { error } = await signInWithGoogle(oauthSearch);
-    if (error) setBusy(false);
+    setSocialError(null);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      setSocialError(error.message || "Could not start Google sign-in.");
+      setBusy(false);
+    }
   }
 
-  if (signedIn && oauthSearch) {
+  if (shouldResume) {
     return (
       <AuthShell
         title="Continuing…"
@@ -72,6 +106,7 @@ export function SignInForm({ signedIn }: { signedIn: boolean }) {
         <p className="text-sm text-muted">
           You are already signed in. Sending you to authorize this client.
         </p>
+        {resumeError ? <p className="mt-4 text-sm text-stamp">{resumeError}</p> : null}
       </AuthShell>
     );
   }
@@ -92,6 +127,7 @@ export function SignInForm({ signedIn }: { signedIn: boolean }) {
         <Field id="email" label="Email" type="email" required />
         <Field id="password" label="Password" type="password" required />
         {state?.error ? <p className="text-sm text-stamp">{state.error}</p> : null}
+        {socialError ? <p className="text-sm text-stamp">{socialError}</p> : null}
         <button
           type="submit"
           disabled={isPending}
