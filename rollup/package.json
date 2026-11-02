@@ -8,7 +8,10 @@
     "start": "next start --port 4570"
   },
   "dependencies": {
-    "@neon/oauth": "^0.1.0",
+    "@neon/oauth": "^0.3.0",
+    "@neon/realtime": "^0.1.2",
+    "@neon/realtime-drizzle": "^0.1.0",
+    "@neon/realtime-react": "^0.1.1",
     "next": "16.5.0-canary.9",
     "react": "19.3.0",
     "react-dom": "19.3.0"

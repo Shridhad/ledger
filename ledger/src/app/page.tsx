@@ -1,5 +1,6 @@
 import { Ledger } from "@/components/ledger";
-import { listTasks } from "./actions";
+import { RealtimeRoot } from "@/components/realtime-root";
+import { loadTasks } from "@/lib/tasks-live";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 
@@ -11,13 +12,23 @@ export default async function Home() {
     redirect("/auth/sign-in");
   }
 
-  const initialTasks = await listTasks();
-
-  return (
+  const live = await loadTasks(session.user.id);
+  const board = (
     <Ledger
       userName={session.user.name || "Operator"}
       userEmail={session.user.email || ""}
-      initialTasks={initialTasks}
+      initialTasks={live.tasks}
+      sealedQuery={live.sealedQuery}
     />
+  );
+
+  if (!live.realtimeUrl || !live.sealedQuery) {
+    return board;
+  }
+
+  return (
+    <RealtimeRoot key={live.sealedQuery.queryFingerprint} url={live.realtimeUrl}>
+      {board}
+    </RealtimeRoot>
   );
 }

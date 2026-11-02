@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { ReportSummary } from "@/lib/types";
+import type { SealedLiveQuery } from "@neon/realtime/client";
+import { useLiveQuery } from "@neon/realtime-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RealtimeRoot } from "@/components/realtime-root";
+import { summaryFromTasks, type ReportSummary } from "@/lib/report-summary";
+import {
+  toTaskDTO,
+  type ReportsLivePayload,
+  type TaskLiveRow,
+} from "@/lib/types";
 
 const LEDGER_URL = process.env.NEXT_PUBLIC_LEDGER_URL ?? "http://localhost:4567";
 
@@ -23,7 +31,7 @@ function Bar({
 }
 
 export function Dashboard() {
-  const [summary, setSummary] = useState<ReportSummary | null>(null);
+  const [payload, setPayload] = useState<ReportsLivePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,14 +40,14 @@ export function Dashboard() {
     fetch("/api/summary")
       .then(async (response) => {
         if (response.status === 401) {
-          if (!cancelled) setSummary(null);
+          if (!cancelled) setPayload(null);
           return;
         }
         if (!response.ok) {
           throw new Error(`Reports API returned ${response.status}`);
         }
-        const payload = (await response.json()) as ReportSummary;
-        if (!cancelled) setSummary(payload);
+        const next = (await response.json()) as ReportsLivePayload;
+        if (!cancelled) setPayload(next);
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err.message);
@@ -60,7 +68,7 @@ export function Dashboard() {
     );
   }
 
-  if (!summary) {
+  if (!payload) {
     return (
       <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6">
         <p className="font-mono text-[11px] tracking-[0.28em] text-muted uppercase">
@@ -85,6 +93,54 @@ export function Dashboard() {
     );
   }
 
+  if (payload.sealedQuery && payload.realtimeUrl) {
+    return (
+      <RealtimeRoot url={payload.realtimeUrl}>
+        <LiveDashboard payload={payload} />
+      </RealtimeRoot>
+    );
+  }
+
+  return (
+    <DashboardView
+      summary={summaryFromTasks(payload.tasks, {
+        user: payload.user,
+        now: new Date(),
+      })}
+    />
+  );
+}
+
+function LiveDashboard({ payload }: { payload: ReportsLivePayload }) {
+  const [query] = useState(payload.sealedQuery as SealedLiveQuery<TaskLiveRow>);
+  const refreshQuery = useCallback(async () => {
+    const response = await fetch("/api/live-query", {
+      method: "POST",
+      cache: "no-store",
+    });
+    if (response.status === 401) {
+      window.location.assign("/api/auth/login");
+      throw new Error("signed out");
+    }
+    if (!response.ok) throw new Error("Could not renew live query");
+    return response.json();
+  }, []);
+  const { data } = useLiveQuery(query, {
+    initialData: payload.tasks,
+    refreshQuery,
+  });
+  const summary = useMemo(
+    () =>
+      summaryFromTasks((data ?? payload.tasks).map((row) => toTaskDTO(row)), {
+        user: payload.user,
+        now: new Date(),
+      }),
+    [data, payload.tasks, payload.user],
+  );
+  return <DashboardView summary={summary} />;
+}
+
+function DashboardView({ summary }: { summary: ReportSummary }) {
   const statusMax = Math.max(
     summary.totals.inbox,
     summary.totals.doing,

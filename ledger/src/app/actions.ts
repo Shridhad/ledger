@@ -1,10 +1,12 @@
 "use server";
 
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { priorities, statuses, tasks, type Priority, type Status } from "@/db/schema";
 import { auth } from "@/lib/auth/server";
+import { toTaskDTO, type TaskDTO } from "@/lib/task-dto";
+
+export type { TaskDTO };
 
 async function requireUserId() {
   const { data: session } = await auth.getSession();
@@ -13,36 +15,6 @@ async function requireUserId() {
     throw new Error("Sign in required");
   }
   return userId;
-}
-
-export type TaskDTO = {
-  id: string;
-  number: number;
-  title: string;
-  notes: string;
-  status: Status;
-  priority: Priority;
-  dueOn: string | null;
-  labels: string[];
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-};
-
-function toDTO(row: typeof tasks.$inferSelect): TaskDTO {
-  return {
-    id: row.id,
-    number: row.number,
-    title: row.title,
-    notes: row.notes,
-    status: row.status,
-    priority: row.priority,
-    dueOn: row.dueOn,
-    labels: row.labels ?? [],
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    completedAt: row.completedAt?.toISOString() ?? null,
-  };
 }
 
 export async function listTasks(filter?: {
@@ -71,7 +43,7 @@ export async function listTasks(filter?: {
     .where(and(...clauses))
     .orderBy(desc(tasks.updatedAt));
 
-  return rows.map(toDTO);
+  return rows.map(toTaskDTO);
 }
 
 export async function createTask(input: {
@@ -113,8 +85,8 @@ export async function createTask(input: {
     })
     .returning();
 
-  revalidatePath("/");
-  return { task: toDTO(row) };
+  if (!row) return { error: "Could not create the task." };
+  return { task: toTaskDTO(row) };
 }
 
 export async function updateTask(
@@ -160,8 +132,7 @@ export async function updateTask(
     .returning();
 
   if (!row) return { error: "Task not found." };
-  revalidatePath("/");
-  return { task: toDTO(row) };
+  return { task: toTaskDTO(row) };
 }
 
 export async function deleteTask(id: string): Promise<{ ok?: true; error?: string }> {
@@ -171,7 +142,6 @@ export async function deleteTask(id: string): Promise<{ ok?: true; error?: strin
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
     .returning();
   if (!row) return { error: "Task not found." };
-  revalidatePath("/");
   return { ok: true };
 }
 

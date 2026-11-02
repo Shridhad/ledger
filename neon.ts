@@ -7,4 +7,14 @@ export default defineConfig({
       source: "mcp/index.ts",
     },
   },
+  preview: {
+    realtime: {
+      allowedOrigins: [
+        "http://localhost:4567",
+        "http://localhost:4570",
+        "https://ledger-mocha-nine.vercel.app",
+        "https://ledger-rollup.vercel.app",
+      ],
+    },
+  },
 });

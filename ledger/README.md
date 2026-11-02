@@ -10,7 +10,7 @@ Workspace: [root README](../README.md)
 ## What you can do
 
 - Sign in with email/password, Google, or Apple.
-- Capture tasks (`inbox` / `doing` / `blocked` / `shipped`, `p0`–`p2`).
+- Capture tasks (`inbox` / `doing` / `blocked` / `shipped`, `p0`–`p2`). The list stays live when `NEON_REALTIME_SECRET` is set.
 - Authorize other clients (consent screen).
 - Expose `GET /api/reports/summary` as an OAuth resource (`@neon/oauth` `withAuth`). JWT `aud` must be `LEDGER_REPORTS_RESOURCE`.
 

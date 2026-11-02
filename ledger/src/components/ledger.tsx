@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import type { SealedLiveQuery } from "@neon/realtime/client";
+import { useLiveQuery } from "@neon/realtime-react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import {
   createTask,
   deleteTask,
@@ -9,6 +11,7 @@ import {
   type TaskDTO,
 } from "@/app/actions";
 import type { Priority, Status } from "@/db/schema";
+import { sortTasks, toTaskDTO, type TaskLiveRow } from "@/lib/task-dto";
 
 const FILTERS: { id: Status | "open" | "all"; label: string }[] = [
   { id: "open", label: "Open" },
@@ -38,15 +41,56 @@ function dueLabel(dueOn: string | null) {
   return { text: dueOn, hot: false };
 }
 
-export function Ledger({
-  userName,
-  userEmail,
-  initialTasks,
-}: {
+type BoardProps = {
   userName: string;
   userEmail: string;
   initialTasks: TaskDTO[];
-}) {
+};
+
+export function Ledger({
+  sealedQuery,
+  ...board
+}: BoardProps & { sealedQuery: SealedLiveQuery<TaskLiveRow> | null }) {
+  if (sealedQuery) {
+    return <LiveLedger {...board} sealedQuery={sealedQuery} />;
+  }
+  return <LedgerBoard {...board} />;
+}
+
+function LiveLedger({
+  initialTasks,
+  sealedQuery,
+  ...board
+}: BoardProps & { sealedQuery: SealedLiveQuery<TaskLiveRow> }) {
+  const [query] = useState(sealedQuery);
+  const refreshQuery = useCallback(async () => {
+    const response = await fetch("/api/tasks/live-query", {
+      method: "POST",
+      cache: "no-store",
+    });
+    if (response.status === 401) {
+      window.location.assign("/auth/sign-in");
+      throw new Error("signed out");
+    }
+    if (!response.ok) throw new Error("Could not renew live query");
+    return response.json();
+  }, []);
+  const { data } = useLiveQuery(query, {
+    initialData: initialTasks,
+    refreshQuery,
+  });
+  const liveItems = useMemo(
+    () => sortTasks((data ?? initialTasks).map((row) => toTaskDTO(row))),
+    [data, initialTasks],
+  );
+  return <LedgerBoard {...board} initialTasks={liveItems} />;
+}
+
+function LedgerBoard({
+  userName,
+  userEmail,
+  initialTasks,
+}: BoardProps) {
   const [items, setItems] = useState(initialTasks);
   const [filter, setFilter] = useState<Status | "open" | "all">("open");
   const [query, setQuery] = useState("");
@@ -55,6 +99,10 @@ export function Ledger({
   );
   const [draft, setDraft] = useState("");
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setItems(initialTasks);
+  }, [initialTasks]);
 
   const visible = useMemo(() => {
     return items.filter((task) => {

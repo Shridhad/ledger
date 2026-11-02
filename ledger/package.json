@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test src/lib/report-summary.test.ts",
     "mcp:deploy": "neon functions deploy mcp --src ../mcp/index.ts --project-id raspy-sky-68137690 --branch br-steep-sun-b5lukx3v"
   },
   "dependencies": {
@@ -14,7 +15,10 @@
     "@modelcontextprotocol/sdk": "^1.32.1",
     "@neon/auth": "^0.8.1",
     "@neon/config": "^1.9.2",
-    "@neon/oauth": "^0.1.0",
+    "@neon/oauth": "^0.3.0",
+    "@neon/realtime": "^0.1.2",
+    "@neon/realtime-drizzle": "^0.1.0",
+    "@neon/realtime-react": "^0.1.1",
     "@neondatabase/serverless": "^1.2.0",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",
@@ -24,6 +28,7 @@
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
