@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { StreamableHTTPTransport } from "@hono/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { createMcpAuth } from "@neon/oauth/mcp";
 import { honoMcp, type McpAuthVariables } from "@neon/oauth/mcp/hono";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -183,11 +183,12 @@ app.get("/", (c) =>
 );
 
 app.all("/mcp", async (c) => {
-  const auth = c.get("auth");
-  const server = createServer(auth.sub);
-  const transport = new StreamableHTTPTransport({ sessionIdGenerator: undefined });
+  const server = createServer(c.get("auth").sub);
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
   await server.connect(transport);
-  return transport.handleRequest(c);
+  return transport.handleRequest(c.req.raw, { authInfo: c.get("authInfo") });
 });
 
 export default app;
