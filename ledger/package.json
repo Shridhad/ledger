@@ -12,9 +12,9 @@
   "dependencies": {
     "@hono/mcp": "^0.3.2",
     "@modelcontextprotocol/sdk": "^1.32.1",
+    "@neon/auth": "^0.8.1",
     "@neon/config": "^1.9.2",
     "@neon/oauth": "^0.1.0",
-    "@neondatabase/auth": "^0.7.0-beta",
     "@neondatabase/serverless": "^1.2.0",
     "drizzle-orm": "^0.45.4",
     "hono": "^4.13.13",

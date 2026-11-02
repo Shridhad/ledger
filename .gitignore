@@ -29,6 +29,9 @@ yarn-error.log*
 ledger/.vercel
 rollup/.vercel
 
+# editor local history
+.history/
+
 # local agent state
 .cursor/hooks
 rollup/AGENTS.md

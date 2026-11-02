@@ -8,7 +8,9 @@ import {
   Field,
   oauthLoginSearch,
   redirectAfterAuth,
-  signInWithGoogle,
+  SocialButtons,
+  signInWithSocial,
+  type SocialProvider,
 } from "../sign-in/form";
 
 async function signUpWithEmail(
@@ -31,13 +33,18 @@ async function signUpWithEmail(
 
 export default function SignUpPage() {
   const [busy, setBusy] = useState(false);
+  const [socialError, setSocialError] = useState<string | null>(null);
   const [state, formAction, isPending] = useActionState(signUpWithEmail, null);
   const oauthSearch = useMemo(() => oauthLoginSearch(), []);
 
-  async function continueWithGoogle() {
+  async function continueWith(provider: SocialProvider) {
     setBusy(true);
-    const { error } = await signInWithGoogle();
-    if (error) setBusy(false);
+    setSocialError(null);
+    const { error } = await signInWithSocial(provider);
+    if (error) {
+      setSocialError(error.message || "Could not start social sign-in.");
+      setBusy(false);
+    }
   }
 
   return (
@@ -57,6 +64,7 @@ export default function SignUpPage() {
         <Field id="email" label="Email" type="email" required />
         <Field id="password" label="Password" type="password" required />
         {state?.error ? <p className="text-sm text-stamp">{state.error}</p> : null}
+        {socialError ? <p className="text-sm text-stamp">{socialError}</p> : null}
         <button
           type="submit"
           disabled={isPending}
@@ -65,13 +73,7 @@ export default function SignUpPage() {
           {isPending ? "Creating…" : "Create account"}
         </button>
       </form>
-      <button
-        onClick={continueWithGoogle}
-        disabled={busy}
-        className="mt-3 w-full border border-rule py-2.5 text-sm tracking-wide uppercase hover:border-ink"
-      >
-        Continue with Google
-      </button>
+      <SocialButtons busy={busy} onContinue={continueWith} />
     </AuthShell>
   );
 }

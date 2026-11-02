@@ -26,16 +26,30 @@ export function redirectAfterAuth(data: unknown) {
   window.location.assign(url ?? postAuthPath(oauthLoginSearch()));
 }
 
-export function signInWithGoogle() {
+const SOCIAL_PROVIDERS = [
+  { id: "google", label: "Google" },
+  { id: "apple", label: "Apple" },
+] as const;
+
+export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number]["id"];
+
+function socialCallbackURL(): string {
+  if (typeof window === "undefined") return "/";
   const search = oauthLoginSearch();
+  if (search) return `${window.location.origin}/auth/sign-in${search}`;
+  return `${window.location.origin}/`;
+}
+
+function socialProviderLabel(provider: SocialProvider): string {
+  const match = SOCIAL_PROVIDERS.find((entry) => entry.id === provider);
+  return match?.label ?? provider;
+}
+
+/** Return to /auth/sign-in with the signed OAuth query when present, else origin+/. */
+export function signInWithSocial(provider: SocialProvider) {
   return authClient.signIn.social({
-    provider: "google",
-    callbackURL:
-      typeof window === "undefined"
-        ? "/"
-        : search
-          ? `${window.location.origin}/auth/sign-in${search}`
-          : window.location.origin + "/",
+    provider,
+    callbackURL: socialCallbackURL(),
   });
 }
 
@@ -90,12 +104,14 @@ export function SignInForm() {
     };
   }, [oauthSearch, promptLogin]);
 
-  async function continueWithGoogle() {
+  async function continueWith(provider: SocialProvider) {
     setBusy(true);
     setSocialError(null);
-    const { error } = await signInWithGoogle();
+    const { error } = await signInWithSocial(provider);
     if (error) {
-      setSocialError(error.message || "Could not start Google sign-in.");
+      setSocialError(
+        error.message || `Could not start ${socialProviderLabel(provider)} sign-in.`,
+      );
       setBusy(false);
     }
   }
@@ -139,14 +155,31 @@ export function SignInForm() {
           {isPending ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <button
-        onClick={continueWithGoogle}
-        disabled={busy}
-        className="mt-3 w-full border border-rule py-2.5 text-sm tracking-wide uppercase hover:border-ink"
-      >
-        Continue with Google
-      </button>
+      <SocialButtons busy={busy} onContinue={continueWith} />
     </AuthShell>
+  );
+}
+
+type SocialButtonsProps = {
+  busy: boolean;
+  onContinue: (provider: SocialProvider) => void;
+};
+
+export function SocialButtons({ busy, onContinue }: SocialButtonsProps) {
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      {SOCIAL_PROVIDERS.map((provider) => (
+        <button
+          key={provider.id}
+          type="button"
+          onClick={() => onContinue(provider.id)}
+          disabled={busy}
+          className="w-full border border-rule py-2.5 text-sm tracking-wide uppercase hover:border-ink"
+        >
+          Continue with {provider.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
