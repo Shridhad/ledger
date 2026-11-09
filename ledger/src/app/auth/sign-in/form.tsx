@@ -29,6 +29,7 @@ export function redirectAfterAuth(data: unknown) {
 const SOCIAL_PROVIDERS = [
   { id: "google", label: "Google" },
   { id: "apple", label: "Apple" },
+  { id: "discord", label: "Discord" },
 ] as const;
 
 export type SocialProvider = (typeof SOCIAL_PROVIDERS)[number]["id"];
